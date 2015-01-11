@@ -1,0 +1,8 @@
+# Created by .gitignore support plugin (hsz.mobi)
+client/.idea
+client/uploadmanager.iml
+server/server.iml
+server/.idea
+.idea/
+client/target/
+server/target/
