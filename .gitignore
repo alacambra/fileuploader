@@ -6,3 +6,5 @@ server/.idea
 .idea/
 client/target/
 server/target/
+client/src/main/resources/endpint
+client/src/main/resources/endpoint
