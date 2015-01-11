@@ -16,6 +16,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataWriter;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericEntity;
@@ -25,7 +26,6 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class MainApp extends Application {
 
     private Desktop desktop = Desktop.getDesktop();
-    private static final String endpoint = "http://localhost:8080/files/r/file/";
+    private static String endpoint = "http://localhost:8080/files/r/file/";
 
     Logger logger  =Logger.getLogger(this.getClass().getName());
 
@@ -53,8 +53,9 @@ public class MainApp extends Application {
         inputGridPane.addRow(0,openMultipleButton);
 
         final Pane rootGroup = new VBox();
+        rootGroup.setMinHeight(300L);
+        rootGroup.setMinWidth(300L);
         rootGroup.getChildren().addAll(inputGridPane);
-//        rootGroup.setPadding(new Insets(12, 12, 12, 12));
 
         stage.setScene(new Scene(rootGroup));
 
@@ -78,35 +79,22 @@ public class MainApp extends Application {
                         }
                     }
                 });
-
-//        GridPane.setConstraints(openMultipleButton, 1, 0);
-//        inputGridPane.setHgap(6);
-//        inputGridPane.setVgap(6);
-//        inputGridPane.addRow(0,openMultipleButton);
-//
-//        final Pane rootGroup = new VBox(12);
-//        rootGroup.getChildren().addAll(inputGridPane);
-//        rootGroup.setPadding(new Insets(12, 12, 12, 12));
-//
-//        stage.setScene(new Scene(rootGroup));
         stage.show();
+    }
+
+    private void loadEndpoint(){
+
     }
 
     public static void main(String[] args) {
         Application.launch(args);
     }
 
-    private void openFile(File file) {
-        try {
-            desktop.open(file);
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, null, e);
-        }
-    }
-
     public Response upload(File file) {
 
         ResteasyClient client = new ResteasyClientBuilder().build();
+        client.register(MultipartFormDataWriter.class);
+
         ResteasyWebTarget target = client.target(endpoint);
 
         MultipartFormDataOutput mdo = new MultipartFormDataOutput();
