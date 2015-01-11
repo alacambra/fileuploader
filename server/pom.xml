@@ -35,6 +35,6 @@
         </dependency>
     </dependencies>
     <build>
-        <finalName>files</finalName>
+        <finalName>uploader</finalName>
     </build>
 </project>

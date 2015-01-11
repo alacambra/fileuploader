@@ -12,6 +12,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
@@ -23,9 +24,7 @@ import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.awt.*;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,12 +32,14 @@ import java.util.logging.Logger;
 public class MainApp extends Application {
 
     private Desktop desktop = Desktop.getDesktop();
-    private static String endpoint = "http://localhost:8080/files/r/file/";
+    private static String endpoint = "http://localhost:8080/uploader/r/file/";
 
     Logger logger  =Logger.getLogger(this.getClass().getName());
 
     @Override
     public void start(final Stage stage) {
+        loadEndpoint();
+
         stage.setTitle("File uploader");
 
         final FileChooser fileChooser = new FileChooser();
@@ -53,8 +54,8 @@ public class MainApp extends Application {
         inputGridPane.addRow(0,openMultipleButton);
 
         final Pane rootGroup = new VBox();
-        rootGroup.setMinHeight(300L);
-        rootGroup.setMinWidth(300L);
+        rootGroup.setMinHeight(600L);
+        rootGroup.setMinWidth(600L);
         rootGroup.getChildren().addAll(inputGridPane);
 
         stage.setScene(new Scene(rootGroup));
@@ -67,14 +68,21 @@ public class MainApp extends Application {
                                 fileChooser.showOpenMultipleDialog(stage);
                         if (list != null) {
                             for (File file : list) {
-                                Label processInfo = new Label("Starting upload of " + file.getName());
-                                rootGroup.getChildren().add(processInfo);
-                                Response r = upload(file);
-                                if(r.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-                                    processInfo.setText(file.getName() + " successfully uploaded");
-                                } else {
-                                    processInfo.setText(file.getName() + " not uploaded " + r.getStatus() + r.readEntity(String.class));
+                                try{
+                                    Label processInfo = new Label("Starting upload of " + file.getName());
+                                    rootGroup.getChildren().add(processInfo);
+                                    Response r = upload(file);
+                                    if(r.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+                                        processInfo.setText(file.getName() + " successfully uploaded");
+                                    } else {
+                                        processInfo.setText(file.getName() + " not uploaded " + r.getStatus() + r.readEntity(String.class));
+                                    }
+                                }catch (Exception ex){
+                                    logger.log(Level.SEVERE, "Ouch!! " + ex.getMessage(), ex);
+                                    Label processInfo = new Label("Ouch!! " + ex.getMessage());
+                                    rootGroup.getChildren().add(processInfo);
                                 }
+
                             }
                         }
                     }
@@ -83,7 +91,16 @@ public class MainApp extends Application {
     }
 
     private void loadEndpoint(){
+        try {
+            InputStream stream = this.getClass().getClassLoader().getResourceAsStream("endpoint");
 
+            if(stream != null)
+                endpoint = IOUtils.toString(stream);
+        } catch (IOException e) {
+            logger.info("endpoint file not found");
+        }
+
+        logger.info("using endpoint: " + endpoint);
     }
 
     public static void main(String[] args) {
@@ -95,7 +112,8 @@ public class MainApp extends Application {
         ResteasyClient client = new ResteasyClientBuilder().build();
         client.register(MultipartFormDataWriter.class);
 
-        ResteasyWebTarget target = client.target(endpoint);
+        ResteasyWebTarget target = client.target(endpoint).queryParam("asynch",true);
+        logger.log(Level.INFO, String.valueOf(target.getUri()));
 
         MultipartFormDataOutput mdo = new MultipartFormDataOutput();
 

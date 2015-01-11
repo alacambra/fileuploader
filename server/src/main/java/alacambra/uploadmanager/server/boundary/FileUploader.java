@@ -6,9 +6,11 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import javax.ejb.Stateful;
 import javax.ejb.Stateless;
+import javax.validation.constraints.Max;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.File;
@@ -17,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by alacambra on 1/11/15.
@@ -25,7 +29,8 @@ import java.util.Map;
 @Stateless
 public class FileUploader {
 
-    private final String UPLOADED_FILE_PATH = "/home/alacambra/removeme/";
+    private final String UPLOADED_FILE_PATH = "/opt/uploader/files/";
+    private Logger logger = Logger.getLogger(this.getClass().getName());
 
     @POST
     @Consumes("multipart/form-data")
@@ -48,15 +53,13 @@ public class FileUploader {
 
                 //constructs upload file path
                 fileName = UPLOADED_FILE_PATH + fileName;
-                writeFile(bytes,fileName);
-                System.out.println("Done");
+                writeFile(bytes, fileName);
 
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new WebApplicationException(e);
             }
 
         }
-//        return Response.ok().build();
     }
 
     private String getFileName(MultivaluedMap<String, String> header) {
@@ -78,9 +81,15 @@ public class FileUploader {
     private void writeFile(byte[] content, String filename) throws IOException {
 
         File file = new File(filename);
-
         if (!file.exists()) {
-            file.createNewFile();
+            try{
+
+                file.createNewFile();
+
+            }catch (IOException e){
+                logger.log(Level.SEVERE, "Error creating file " + filename + " --- " + e.getMessage());
+                throw new RuntimeException("Error creating file " + filename, e);
+            }
         }
 
         FileOutputStream fop = new FileOutputStream(file);
