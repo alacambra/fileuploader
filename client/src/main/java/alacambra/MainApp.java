@@ -5,6 +5,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.Button;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -44,6 +45,19 @@ public class MainApp extends Application {
 
         final Button openMultipleButton = new Button("Select files to upload.");
 
+        final GridPane inputGridPane = new GridPane();
+
+        GridPane.setConstraints(openMultipleButton, 1, 0);
+        inputGridPane.setHgap(6);
+        inputGridPane.setVgap(6);
+        inputGridPane.addRow(0,openMultipleButton);
+
+        final Pane rootGroup = new VBox();
+        rootGroup.getChildren().addAll(inputGridPane);
+//        rootGroup.setPadding(new Insets(12, 12, 12, 12));
+
+        stage.setScene(new Scene(rootGroup));
+
         openMultipleButton.setOnAction(
                 new EventHandler<ActionEvent>() {
                     @Override
@@ -52,25 +66,29 @@ public class MainApp extends Application {
                                 fileChooser.showOpenMultipleDialog(stage);
                         if (list != null) {
                             for (File file : list) {
-                                upload(file);
+                                Label processInfo = new Label("Starting upload of " + file.getName());
+                                rootGroup.getChildren().add(processInfo);
+                                Response r = upload(file);
+                                if(r.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+                                    processInfo.setText(file.getName() + " successfully uploaded");
+                                } else {
+                                    processInfo.setText(file.getName() + " not uploaded " + r.getStatus() + r.readEntity(String.class));
+                                }
                             }
                         }
                     }
                 });
 
-
-        final GridPane inputGridPane = new GridPane();
-
-        GridPane.setConstraints(openMultipleButton, 1, 0);
-        inputGridPane.setHgap(6);
-        inputGridPane.setVgap(6);
-        inputGridPane.getChildren().addAll(openMultipleButton);
-
-        final Pane rootGroup = new VBox(12);
-        rootGroup.getChildren().addAll(inputGridPane);
-        rootGroup.setPadding(new Insets(12, 12, 12, 12));
-
-        stage.setScene(new Scene(rootGroup));
+//        GridPane.setConstraints(openMultipleButton, 1, 0);
+//        inputGridPane.setHgap(6);
+//        inputGridPane.setVgap(6);
+//        inputGridPane.addRow(0,openMultipleButton);
+//
+//        final Pane rootGroup = new VBox(12);
+//        rootGroup.getChildren().addAll(inputGridPane);
+//        rootGroup.setPadding(new Insets(12, 12, 12, 12));
+//
+//        stage.setScene(new Scene(rootGroup));
         stage.show();
     }
 
@@ -86,7 +104,7 @@ public class MainApp extends Application {
         }
     }
 
-    public void upload(File file) {
+    public Response upload(File file) {
 
         ResteasyClient client = new ResteasyClientBuilder().build();
         ResteasyWebTarget target = client.target(endpoint);
@@ -101,6 +119,7 @@ public class MainApp extends Application {
 
         GenericEntity<MultipartFormDataOutput> entity = new GenericEntity<MultipartFormDataOutput>(mdo) {};
         Response r = target.request().post(Entity.entity(entity, MediaType.MULTIPART_FORM_DATA_TYPE));
-        logger.log(Level.SEVERE, String.valueOf(r.getStatus()) + r.getHeaders());
+        logger.log(Level.INFO, String.valueOf(r.getStatus()) + r.getHeaders());
+        return r;
     }
 }
