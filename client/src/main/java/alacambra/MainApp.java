@@ -38,23 +38,11 @@ public class MainApp extends Application {
 
     @Override
     public void start(final Stage stage) {
-        stage.setTitle("File Chooser Sample");
+        stage.setTitle("File uploader");
 
         final FileChooser fileChooser = new FileChooser();
 
-        final Button openButton = new Button("Open a Picture...");
-        final Button openMultipleButton = new Button("Open Pictures...");
-
-        openButton.setOnAction(
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(final ActionEvent e) {
-                        File file = fileChooser.showOpenDialog(stage);
-                        if (file != null) {
-                            upload(file);
-                        }
-                    }
-                });
+        final Button openMultipleButton = new Button("Select files to upload.");
 
         openMultipleButton.setOnAction(
                 new EventHandler<ActionEvent>() {
@@ -73,11 +61,10 @@ public class MainApp extends Application {
 
         final GridPane inputGridPane = new GridPane();
 
-        GridPane.setConstraints(openButton, 0, 0);
         GridPane.setConstraints(openMultipleButton, 1, 0);
         inputGridPane.setHgap(6);
         inputGridPane.setVgap(6);
-        inputGridPane.getChildren().addAll(openButton, openMultipleButton);
+        inputGridPane.getChildren().addAll(openMultipleButton);
 
         final Pane rootGroup = new VBox(12);
         rootGroup.getChildren().addAll(inputGridPane);
@@ -107,7 +94,7 @@ public class MainApp extends Application {
         MultipartFormDataOutput mdo = new MultipartFormDataOutput();
 
         try {
-            mdo.addFormData(file.getName(), new FileInputStream(file), MediaType.APPLICATION_OCTET_STREAM_TYPE);
+            mdo.addFormData("file", new FileInputStream(file), MediaType.APPLICATION_OCTET_STREAM_TYPE, file.getName());
         } catch (FileNotFoundException e) {
             logger.log(Level.SEVERE, null, e);
         }
